@@ -8,7 +8,7 @@ creates two PDFs per account (extraction + attachments), uploads to S3.
 Usage:
   export AWS_PROFILE=your-profile   # optional
   python split_and_upload.py \
-         --pdf  "/Multiple set of Pdfs.pdf" \
+         --pdf  "/combinedPdf.pdf" \
          --json out.json \
          --bucket my-bucket \
          --prefix "IDP Docs"

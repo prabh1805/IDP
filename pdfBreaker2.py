@@ -8,7 +8,7 @@ Account format:
 import fitz  # PyMuPDF
 from pathlib import Path
 
-INPUT_PDF = Path(r"./Multiple set of Pdfs.pdf")   # <--- change to your file
+INPUT_PDF = Path(r"./combinedPdf.pdf")   # <--- change to your file
 
 def split_on_new_account(pdf_path: Path):
     doc = fitz.open(pdf_path)

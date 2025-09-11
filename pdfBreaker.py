@@ -69,7 +69,7 @@ def find_account_numbers(image_bytes: bytes):
 if __name__ == "__main__":
     """
     CLI:  python find_account.py
-    Processes '/Multiple set of Pdfs.pdf' and prints
+    Processes '/combinedPdf.pdf' and prints
     {
       "xyzz": {
           "extraction": "1-2",
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     import pypdfium2 as pdfium
     import json
 
-    file_path = Path('./Multiple set of Pdfs.pdf')
+    file_path = Path('./combinedPdf.pdf')
     if not file_path.exists():
         print("File not found")
         sys.exit(1)

@@ -39,7 +39,7 @@ def split_pdf(pdf_path: str, a: int, b: int) -> None:
     print("Created:", out2)
 
 if __name__ == "__main__":
-    pdf_file = "./Multiple set of Pdfs.pdf"
+    pdf_file = "./combinedPdf.pdf"
     try:
         a, b = 10, 12
     except ValueError:

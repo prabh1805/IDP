@@ -3,7 +3,7 @@ import fitz          # PyMuPDF
 import sys
 from pathlib import Path
 
-pdf = Path("./Multiple set of Pdfs.pdf")     # <-- make sure this file is in the same folder
+pdf = Path("./combinedPdf.pdf")     # <-- make sure this file is in the same folder
 print("Python executable :", sys.executable)
 print("PyMuPDF version   :", fitz.__doc__.split()[1])  # quick version check
 print("File exists?      :", pdf.exists())
