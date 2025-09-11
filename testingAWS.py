@@ -5,13 +5,13 @@ from botocore.exceptions import ClientError
 # CONFIGURATION
 # ----------------------------
 S3_BUCKET_NAME = 'awsidpdocs'
-S3_KEY         = 'Attachment2.pdf'          # your PDF
+S3_KEY         = 'Attachment1.pdf'          # your PDF
 AWS_REGION     =  'us-east-1'
 BEDROCK_MODEL  = 'anthropic.claude-3-sonnet-20240229-v1:0'
 
 OUTPUT_RAW_JSON   = 'textract_response.json'
-OUTPUT_TEXT       = 'extracted_text2.txt'
-OUTPUT_STRUCTURED = 'structured_output4.json'
+OUTPUT_TEXT       = 'extracted_text.txt'
+OUTPUT_STRUCTURED = 'structured_output3.json'
 
 textract = boto3.client('textract', region_name=AWS_REGION)
 bedrock  = boto3.client('bedrock-runtime', region_name=AWS_REGION)
@@ -73,53 +73,65 @@ def linearize(blocks):
 
 def ask_claude(text: str) -> dict:
     prompt = f"""
-    You will be shared attachment you have to classify what type of document it is and extract the relevant information from the document and provide the output in JSON format.
-    If you are unable to classify the document or extract the information, respond with an empty JSON
-    Provide the output in the following format:
-    {{
-      "document_type": "type of document",
-        "document_information" : "",
-        ..
-        "key1": "value1",
-        "key2": "value2",
-        ...
-    }}
+    You are an expert in loan-file indexing.  
+    The following text is raw OCR from a PDF that may contain multiple accounts, multiple signers, and supporting documents.
+
+    Return **only** a valid JSON array (do **not** wrap it in ```json or add any commentary).
+
+    Indexing rules  
+    1. One JSON object **per distinct account number**.  
+    - If no account number is found on a page, link the page to the account whose account holder’s Name + PAN/Aadhaar/DOB already exists; otherwise create a new account object.  
+
+    2. Required fields for every account object  
+    - Account Holder Names – array of strings (primary and co-borrowers there can be multiple names per account)
+    - AccountNumbers      – array of strings (primary keys)  
+    - AccountTypes        – array of strings (e.g., "Business", "Personal", "Joint")  
+    - AccountPurposes     – array of strings (e.g., "Consumer", "Home Loan", "Car Loan", "Education Loan")  
+    - OwnershipTypes      – array of strings (e.g., "Single", "Joint", "Multiple")  
+    - DateOpened          – ISO date string or empty string  
+    - DateRevised         – ISO date string or empty string  
+    - OpenedBy            – string (name)  
+    - RevisedBy           – string (name)  
+    - CustomerName        – primary account holder’s full legal name  
+    - PAN                 – primary account holder’s PAN  
+    - Aadhaar             – primary account holder’s Aadhaar  
+    - DOB                 – dd-mm-yyyy or yyyy-mm-dd  
+    - CustomerID          – omit if absent  
+    - Documents           – array of {{"DocumentType":"<type>","PageNumber":<int>}}  
+    - Stampdate           – any date string found on the page; omit if none  
+    - Document Types  – array of strings (e.g., "Loan Agreement", "KYC", "Statement", "Form 16", "ITR", "Bank Statement", "Salary Slip", "EMI Receipt", "Lien Letter", "NOC", "Foreclosure Letter", "Property Document",'Marriage Certificate', 'Driver License' etc. give with page numbers)
+
+    3. Signers (guarantors, co-borrowers, or joint owners)  
+    - Create an array Signers.  
+    - Each signer object must contain:  
+            - SignerName  
+            - SSN  
+            - Address           – full street address  
+            - Mailing           – mailing address (if different)  
+            - HomePhone  
+            - WorkPhone  
+            - Employer  
+            - Occupation  
+            - DOB               – dd-mm-yyyy  
+            - BirthPlace  
+            - DLNumber  
+            - MMN               – mother’s maiden name  
+
+    4. General extraction rules  
+    - Preserve original spelling and casing.  
+    - If a field is truly absent, supply an empty string or omit the key (never null).  
+    - Any date-like string (e.g., “12/3/1956”, “03-12-1956”, “1956-12-03”) should be normalized to dd-mm-yyyy.  
+    - Page numbers are 1-based integers.
+
+    OCR text:
     {text}
     """
     body = json.dumps({
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 4000,
         "temperature": 0,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": (
-                            "You will be given a document. "
-                            "Classify its type and extract the relevant information into JSON. "
-                            "If you cannot classify it or extract anything, return an empty JSON object.\n\n"
-                            "Provide the output in the following format:\n"
-                            '{\n'
-                            '  "document_type": "type of document",\n'
-                            '  "key1": "value1",\n'
-                            '  "key2": "value2",\n'
-                            '  ...\n'
-                            '}\n\n'
-                            "Document text:\n" + text
-                        )
-                    }
-                ]
-            }
-        ]
+        "messages": [{"role": "user", "content": prompt}]
     })
-    # body = json.dumps({
-    #     "anthropic_version": "bedrock-2023-05-31",
-    #     "max_tokens": 4000,
-    #     "temperature": 0,
-    #     "messages": [{"role": "user", "content": prompt}]
-    # })
 
     resp = bedrock.invoke_model(
         modelId=BEDROCK_MODEL,
@@ -153,7 +165,7 @@ def ask_claude(text: str) -> dict:
         raise
 
     # --- 5. Save the JSON exactly as Claude produced it ---
-    with open("structured_output2.json", "w", encoding="utf-8") as f:
+    with open("structured_output.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
     return data
