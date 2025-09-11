@@ -1,0 +1,52 @@
+[
+  {
+    "documentType": "identity-document",
+    "type": "DELAWARE ID",
+    "number": "924 1231",
+    "expirationDate": "03/01/2022"
+  },
+  {
+    "documentType": "background-check",
+    "name": "JEROME R DRIGGUS",
+    "ssn": "225-31-3593",
+    "dateOfBirth": "1983-02-28",
+    "address": "268 Berry DR, Smyrna, DE 19977",
+    "ofacStatus": "PASSED",
+    "qualifileScore": 528,
+    "qualifileReasons": [
+      "ASSET OWNERSHIP HISTORY",
+      "TIME SINCE NON-DDA INQUIRY ACTIVITY",
+      "DDA CLOSURE PAYMENT HISTORY",
+      "DDA CLOSURE(S)"
+    ],
+    "chexSystemsClosures": 1,
+    "chexSystemsUnpaidClosures": 1,
+    "chexSystemsClosureDetails": [
+      {
+        "dateReported": "2014-08-18",
+        "reportedBy": "DEL-ONE FEDERAL CREDIT UNION",
+        "chargeOffAmount": 415.09,
+        "collectionFlag": false,
+        "closureReason": "NON-SUFFICIENT FUNDS(NSF) ACTIVITY"
+      }
+    ],
+    "inquiries": [
+      {
+        "date": "2014-10-18",
+        "name": "WOODFOREST NATIONAL BANK"
+      },
+      {
+        "date": "2014-04-15",
+        "name": "DEL-ONE FEDERAL CREDIT UNION"
+      },
+      {
+        "date": "2014-04-08",
+        "name": "DEL-ONE FEDERAL CREDIT UNION"
+      },
+      {
+        "date": "2013-04-23",
+        "name": "DEL-ONE FEDERAL CREDIT UNION"
+      }
+    ]
+  }
+]
