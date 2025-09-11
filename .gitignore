@@ -212,3 +212,11 @@ __marimo__/
 # PDF files
 *.pdf
 *.PDF
+
+#Text files
+*.txt
+*.TEXT
+
+#JSON files
+*.json
+*.JSON
