@@ -1,5 +1,10 @@
 import re
 import boto3
+import sys
+from io import BytesIO
+from pathlib import Path
+import pypdfium2 as pdfium
+import json
 
 textract = boto3.client("textract")
 
@@ -66,7 +71,96 @@ def find_account_numbers(image_bytes: bytes):
 
     return accounts
 
+# ------------------------------------------------------------------
+# 1.  Re-usable helper – returns the final dict, no I/O
+# ------------------------------------------------------------------
+def build_account_json(pdf_path: Path) -> dict:
+    """
+    Scan *pdf_path* and return
+    {
+      "<account>": {
+          "extraction": "1-2",
+          "attachments": "3-5"
+      },
+      ...
+    }
+    Raises FileNotFoundError if the file does not exist.
+    """
+    if not pdf_path.exists():
+        raise FileNotFoundError(pdf_path)
+
+    # ---- small helpers ----
+    def _png_from_page(page):
+        bitmap = page.render(scale=2)
+        buf = BytesIO()
+        bitmap.to_pil().save(buf, format='PNG')
+        buf.seek(0)
+        return buf.getvalue()
+
+    def _range_str(pages):
+        """[1,2,3] -> '1-3'  |  [6] -> '6'"""
+        if not pages:
+            return ""
+        return f"{min(pages)}-{max(pages)}" if len(pages) > 1 else str(pages[0])
+
+    # ---- main loop ----
+    pdf = pdfium.PdfDocument(pdf_path.read_bytes())
+    out = {}                      # final result
+    current_acct = None           # account number in force
+    extraction_pages = []         # pages where we *saw* the account number
+    attachment_pages = []         # trailing pages for that account
+
+    for idx, page in enumerate(pdf, start=1):
+        png_bytes = _png_from_page(page)
+        accounts_on_page = find_account_numbers(png_bytes)
+
+        # ---- 1. new account detected ----
+        if accounts_on_page and accounts_on_page != {current_acct}:
+            # flush previous account block
+            if current_acct is not None:
+                out[current_acct] = {
+                    "extraction": _range_str(extraction_pages),
+                    "attachments": _range_str(attachment_pages)
+                }
+            # start new account
+            current_acct = accounts_on_page.pop()   # take first new number
+            extraction_pages = [idx]
+            attachment_pages = []
+            print(f"New account {current_acct} starts at page {idx}")
+
+        # ---- 2. same account continues ----
+        elif current_acct is not None:
+            if accounts_on_page:                  # same number again
+                extraction_pages.append(idx)
+            else:                                 # no number → attachment
+                attachment_pages.append(idx)
+
+        # ---- 3. no account seen yet ----
+        else:
+            print(f"Page {idx}: no account number found – skipping")
+
+    # ---- 4. flush last account ----
+    if current_acct is not None:
+        out[current_acct] = {
+            "extraction": _range_str(extraction_pages),
+            "attachments": _range_str(attachment_pages)
+        }
+
+    return out
+
+
+# ------------------------------------------------------------------
+# 2.  CLI entry-point (optional)
+# ------------------------------------------------------------------
 if __name__ == "__main__":
+    file_path = Path('./combinedPdf.pdf')
+    try:
+        result = build_account_json(file_path)
+    except FileNotFoundError:
+        print("File not found")
+        sys.exit(1)
+
+    print(json.dumps(result, indent=2))
     """
     CLI:  python find_account.py
     Processes '/combinedPdf.pdf' and prints
@@ -81,11 +175,7 @@ if __name__ == "__main__":
       }
     }
     """
-    import sys
-    from io import BytesIO
-    from pathlib import Path
-    import pypdfium2 as pdfium
-    import json
+
 
     file_path = Path('./combinedPdf.pdf')
     if not file_path.exists():

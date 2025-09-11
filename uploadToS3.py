@@ -1,34 +1,31 @@
 #!/usr/bin/env python3
 """
-split_and_upload.py
+uploadToS3.py
 
-Reads the JSON produced earlier (account → page-ranges) and the original PDF,
-creates two PDFs per account (extraction + attachments), uploads to S3.
-
-Usage:
-  export AWS_PROFILE=your-profile   # optional
-  python split_and_upload.py \
-         --pdf  "/combinedPdf.pdf" \
-         --json out.json \
-         --bucket my-bucket \
-         --prefix "IDP Docs"
+Imports pdfBreaker, gets the JSON, splits the PDF, uploads to S3.
+No CLI arguments – just edit the four constants below.
 """
 
-import json
 import tempfile
 from pathlib import Path
-from argparse import ArgumentParser
 import pypdfium2 as pdfium
 import boto3
+from pdfBreaker import build_account_json   # <-- reuse previous logic
 
+# --------------------------------------------------
+#  HARD-CODE HERE
+# --------------------------------------------------
+PDF_FILE   = Path("./combinedPdf.pdf")
+S3_BUCKET  = "awsidpdocs"
+S3_PREFIX  = ""
+AWS_PROFILE= None            # set string if needed
+# --------------------------------------------------
+
+if AWS_PROFILE:
+    boto3.setup_default_session(profile_name=AWS_PROFILE)
 s3 = boto3.client("s3")
 
 def parse_range(rng: str):
-    """
-    '3-5' -> [3,4,5]
-    '6'   -> [6]
-    ''    -> []
-    """
     if not rng:
         return []
     parts = rng.split("-")
@@ -37,33 +34,25 @@ def parse_range(rng: str):
     return list(range(int(parts[0]), int(parts[1]) + 1))
 
 def build_pdf(pdf_doc, page_nums, output_path):
-    """Write a new PDF containing only the selected 1-based page numbers."""
     page_nums = sorted(set(page_nums))
-    src_pages = [pdf_doc[p - 1] for p in page_nums]   # pypdfium is 0-based
-    dest_pdf  = pdfium.PdfDocument.new()
+    src_pages = [pdf_doc[p - 1] for p in page_nums]
+    dest_pdf = pdfium.PdfDocument.new()
     for sp in src_pages:
         dest_pdf.import_pages(sp)
     dest_pdf.save(output_path)
 
-def upload_to_s3(file_path, bucket, key):
+def upload(file_path, bucket, key):
     s3.upload_file(str(file_path), bucket, key)
     print(f" Uploaded  ->  s3://{bucket}/{key}")
 
 def main():
-    ap = ArgumentParser()
-    ap.add_argument("--pdf", required=True, help="original multi-page PDF")
-    ap.add_argument("--json", required=True, help="JSON with page ranges")
-    ap.add_argument("--bucket", required=True, help="target S3 bucket")
-    ap.add_argument("--prefix", default="IDP Docs", help="S3 key prefix")
-    args = ap.parse_args()
+    if not PDF_FILE.exists():
+        raise SystemExit("PDF file not found")
 
-    pdf_path = Path(args.pdf)
-    json_path = Path(args.json)
-    if not pdf_path.exists() or not json_path.exists():
-        raise SystemExit("PDF or JSON file not found")
+    plan = build_account_json(PDF_FILE)          # <-- call pdfBreaker
+    print("JSON received:", plan)
 
-    plan = json.loads(json_path.read_text())
-    src_pdf = pdfium.PdfDocument(pdf_path.read_bytes())
+    src_pdf = pdfium.PdfDocument(PDF_FILE.read_bytes())
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
@@ -71,26 +60,18 @@ def main():
             extraction_pages = parse_range(ranges.get("extraction", ""))
             attachment_pages = parse_range(ranges.get("attachments", ""))
 
-            # ---- build PDFs ----
             ext_pdf = tmpdir / f"{account}_extraction.pdf"
             att_pdf = tmpdir / f"{account}_attachments.pdf"
 
             if extraction_pages:
                 build_pdf(src_pdf, extraction_pages, ext_pdf)
-                upload_to_s3(
-                    ext_pdf,
-                    args.bucket,
-                    f"{args.prefix}/{account}/{account}_extraction.pdf"
-                )
+                upload(ext_pdf, S3_BUCKET, f"{S3_PREFIX}/{account}/{account}_extraction.pdf")
+
             if attachment_pages:
                 build_pdf(src_pdf, attachment_pages, att_pdf)
-                upload_to_s3(
-                    att_pdf,
-                    args.bucket,
-                    f"{args.prefix}/{account}/{account}_attachments.pdf"
-                )
+                upload(att_pdf, S3_BUCKET, f"{S3_PREFIX}/{account}/{account}_attachments.pdf")
 
-    print("All done.")
+    print("All uploads finished.")
 
 if __name__ == "__main__":
     main()
