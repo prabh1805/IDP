@@ -17,7 +17,7 @@ from pdfBreaker import build_account_json   # <-- reuse previous logic
 # --------------------------------------------------
 PDF_FILE   = Path("./combinedPdf.pdf")
 S3_BUCKET  = "awsidpdocs"
-S3_PREFIX  = ""
+S3_PREFIX  = "SplittedPdfs"        # folder in bucket
 AWS_PROFILE= None            # set string if needed
 # --------------------------------------------------
 
@@ -34,11 +34,13 @@ def parse_range(rng: str):
     return list(range(int(parts[0]), int(parts[1]) + 1))
 
 def build_pdf(pdf_doc, page_nums, output_path):
+    """Build a new PDF that contains *page_nums* (1-based) from *pdf_doc*."""
     page_nums = sorted(set(page_nums))
-    src_pages = [pdf_doc[p - 1] for p in page_nums]
     dest_pdf = pdfium.PdfDocument.new()
-    for sp in src_pages:
-        dest_pdf.import_pages(sp)
+
+    # import_pages wants 0-based indices and the SOURCE document
+    dest_pdf.import_pages(pdf_doc, pages=[p - 1 for p in page_nums])
+
     dest_pdf.save(output_path)
 
 def upload(file_path, bucket, key):
@@ -69,7 +71,7 @@ def main():
 
             if attachment_pages:
                 build_pdf(src_pdf, attachment_pages, att_pdf)
-                upload(att_pdf, S3_BUCKET, f"{S3_PREFIX}/{account}/{account}_attachments.pdf")
+                upload(att_pdf, S3_BUCKET, f"{S3_PREFIX}/{account}//{account}_attachments.pdf")
 
     print("All uploads finished.")
 
