@@ -71,7 +71,7 @@ def main():
 
             if attachment_pages:
                 build_pdf(src_pdf, attachment_pages, att_pdf)
-                upload(att_pdf, S3_BUCKET, f"{S3_PREFIX}/{account}//{account}_attachments.pdf")
+                upload(att_pdf, S3_BUCKET, f"{S3_PREFIX}/{account}/{account}_attachments.pdf")
 
     print("All uploads finished.")
 
