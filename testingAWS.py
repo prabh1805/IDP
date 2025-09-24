@@ -80,27 +80,25 @@ def ask_claude(text: str) -> dict:
 
     Indexing rules  
     1. One JSON object **per distinct account number**.  
-    - If no account number is found on a page, link the page to the account whose account holder’s Name + PAN/Aadhaar/DOB already exists; otherwise create a new account object.  
+    - If no account number is found on a page, link the page to the account whose account holder’s Name  otherwise create a new account object.  
 
     2. Required fields for every account object  
     - Account Holder Names – array of strings (primary and co-borrowers there can be multiple names per account)
-    - AccountNumbers      – array of strings (primary keys)  
-    - AccountTypes        – array of strings (e.g., "Business", "Personal", "Joint")  
-    - AccountPurposes     – array of strings (e.g., "Consumer", "Home Loan", "Car Loan", "Education Loan")  
-    - OwnershipTypes      – array of strings (e.g., "Single", "Joint", "Multiple")  
+    - AccountNumber      –  (primary keys)  
+    - AccountType        –  (e.g., "Business", "Personal", "Joint")  
+    - AccountPurpose    –  (e.g., "Consumer", "Home Loan", "Car Loan", "Education Loan")  
+    - OwnershipType     – (e.g., "Single", "Joint", "Multiple")  
     - DateOpened          – ISO date string or empty string  
     - DateRevised         – ISO date string or empty string  
     - OpenedBy            – string (name)  
     - RevisedBy           – string (name)  
-    - CustomerName        – primary account holder’s full legal name  
-    - PAN                 – primary account holder’s PAN  
-    - Aadhaar             – primary account holder’s Aadhaar  
     - DOB                 – dd-mm-yyyy or yyyy-mm-dd  
     - CustomerID          – omit if absent  
     - Documents           – array of {{"DocumentType":"<type>","PageNumber":<int>}}  
     - Stampdate           – any date string found on the page; omit if none  
-    - Document Types  – array of strings (e.g., "Loan Agreement", "KYC", "Statement", "Form 16", "ITR", "Bank Statement", "Salary Slip", "EMI Receipt", "Lien Letter", "NOC", "Foreclosure Letter", "Property Document",'Marriage Certificate', 'Driver License' etc. give with page numbers)
-
+    - Mailing Address     – mailing address
+    - SSN                 –Social security number
+   
     3. Signers (guarantors, co-borrowers, or joint owners)  
     - Create an array Signers.  
     - Each signer object must contain:  
