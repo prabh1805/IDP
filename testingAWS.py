@@ -93,8 +93,7 @@ def ask_claude(text: str) -> dict:
     - OpenedBy            – string (name)  
     - RevisedBy           – string (name)  
     - DOB                 – dd-mm-yyyy or yyyy-mm-dd  
-    - CustomerID          – omit if absent  
-    - Documents           – array of {{"DocumentType":"<type>","PageNumber":<int>}}  
+    - CustomerID          – omit if absent    
     - Stampdate           – any date string found on the page; omit if none  
     - Mailing Address     – mailing address
     - SSN                 –Social security number

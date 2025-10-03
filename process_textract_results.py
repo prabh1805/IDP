@@ -85,6 +85,18 @@ def main():
             print(f"❌ Failed {txt_file}: {e}")
     
     print("🎉 Processing completed!")
+    
+    # Auto-index processed documents with MongoDB
+    print("\n🔍 Starting automatic MongoDB indexing...")
+    try:
+        from mongodb_rag_indexer import MongoDBRAGIndexer, MONGODB_CONFIG
+        indexer = MongoDBRAGIndexer(MONGODB_CONFIG)
+        indexer.index_s3_documents()
+        print("✅ MongoDB indexing completed")
+    except ImportError:
+        print("⚠️ MongoDB indexer not available - skipping auto-indexing")
+    except Exception as e:
+        print(f"⚠️ MongoDB indexing failed: {e}")
 
 if __name__ == "__main__":
     main()

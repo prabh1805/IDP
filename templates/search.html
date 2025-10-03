@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .search-input-group {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .search-options {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .search-type {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-type input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        .search-type label {
+            font-weight: 500;
+            color: #495057;
+            cursor: pointer;
+        }
+
+        .search-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            padding: 40px;
+            min-height: 200px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .results-count {
+            font-size: 1.2rem;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .search-info {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .result-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .result-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .account-number {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .customer-name {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .result-content {
+            padding: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+
+        .attachments-section {
+            margin-top: 20px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #4facfe;
+        }
+
+        .attachment-item {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .attachment-type {
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 5px;
+            text-transform: capitalize;
+        }
+
+        .attachment-details {
+            color: #424242;
+            font-size: 0.95rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .no-results-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .similarity-score {
+            background: #d4edda;
+            color: #155724;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .example-prompts {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .prompt-example {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .prompt-example:hover {
+            background: #bbdefb;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .search-section {
+                padding: 20px;
+            }
+
+            .results-section {
+                padding: 20px;
+            }
+
+            .search-options {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 Document Search</h1>
+            <p>Search through loan documents, attachments, and customer information</p>
+        </div>
+
+        <div class="search-section">
+            <form class="search-form" id="searchForm">
+                <div class="search-input-group">
+                    <input type="text" class="search-input" id="searchQuery"
+                        placeholder="Search by account number, name, SSN, or try prompts like 'show me loan documents', 'find customers in Delaware', 'elderly customers'..."
+                        autocomplete="off">
+                </div>
+
+                <div class="search-options">
+                    <div class="search-type">
+                        <input type="radio" id="traditional" name="searchType" value="traditional" checked>
+                        <label for="traditional">🔍 Traditional Search</label>
+                    </div>
+                    <div class="search-type">
+                        <input type="radio" id="semantic" name="searchType" value="semantic">
+                        <label for="semantic">🧠 Smart Search (AI)</label>
+                    </div>
+                </div>
+
+                <div class="example-prompts" id="examplePrompts" style="display: none;">
+                    <p style="margin-bottom: 10px; color: #6c757d; font-size: 0.9rem;">Try these example prompts:</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <button type="button" class="prompt-example" onclick="usePrompt('show me all loan documents')">📄 Show loan documents</button>
+                        <button type="button" class="prompt-example" onclick="usePrompt('find customers in Delaware')">🏠 Delaware customers</button>
+                        <button type="button" class="prompt-example" onclick="usePrompt('elderly customers')">👴 Elderly customers</button>
+                        <button type="button" class="prompt-example" onclick="usePrompt('find driver license info')">🆔 Driver licenses</button>
+                        <button type="button" class="prompt-example" onclick="usePrompt('power of attorney documents')">📋 Power of attorney</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="search-button" id="searchButton">
+                    Search Documents
+                </button>
+            </form>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="no-results">
+                <div class="no-results-icon">🔍</div>
+                <h3>Ready to search</h3>
+                <p>Enter your search query above to find documents</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchForm = document.getElementById('searchForm');
+        const searchQuery = document.getElementById('searchQuery');
+        const searchButton = document.getElementById('searchButton');
+        const resultsSection = document.getElementById('resultsSection');
+
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await performSearch();
+        });
+
+        searchQuery.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+
+        async function performSearch() {
+            const query = searchQuery.value.trim();
+            if (!query) {
+                showError('Please enter a search query');
+                return;
+            }
+
+            const searchType = document.querySelector('input[name="searchType"]:checked').value;
+
+            showLoading();
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        search_type: searchType,
+                        limit: 20
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Search failed: ' + error.message);
+            }
+        }
+
+        function showLoading() {
+            searchButton.disabled = true;
+            searchButton.textContent = 'Searching...';
+
+            resultsSection.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Searching documents...</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            searchButton.disabled = false;
+            searchButton.textContent = 'Search Documents';
+
+            resultsSection.innerHTML = `
+                <div class="error-message">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+
+        function displayResults(data) {
+            searchButton.disabled = false;
+            searchButton.textContent = 'Search Documents';
+
+            if (data.count === 0) {
+                resultsSection.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">📭</div>
+                        <h3>No results found</h3>
+                        <p>Try different search terms or check your spelling</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="results-header">
+                    <div class="results-count">
+                        Found ${data.count} result${data.count !== 1 ? 's' : ''}
+                    </div>
+                    <div class="search-info">
+                        Query: "${data.query}" | Type: ${data.search_type}
+                    </div>
+                </div>
+            `;
+
+            data.results.forEach(result => {
+                html += createResultCard(result);
+            });
+
+            resultsSection.innerHTML = html;
+        }
+
+        function createResultCard(result) {
+            const content = result.content || {};
+            const accountInfo = content.account_info || {};
+            const attachments = content.attachments || [];
+            const signers = content.signers || [];
+
+            const customerName = getDisplayValue(accountInfo.customer_name) ||
+                getDisplayValue(content.loan_details?.AccountHolderNames) ||
+                getDisplayValue(content.loan_details?.CustomerName) ||
+                'N/A';
+
+            const similarityScore = result.similarity_score ?
+                `<span class="similarity-score">Similarity: ${(result.similarity_score * 100).toFixed(1)}%</span>` : '';
+
+            // Generate dynamic info grid from all available data
+            const infoItems = generateInfoItems(result);
+
+            // Generate attachments section
+            let attachmentsHtml = '';
+            if (attachments.length > 0) {
+                attachmentsHtml = `
+                    <div class="attachments-section">
+                        <div class="section-title">📎 Attachments (${attachments.length})</div>
+                        ${attachments.map(att => createAttachmentItem(att)).join('')}
+                    </div>
+                `;
+            }
+
+            // Generate signers section if available
+            let signersHtml = '';
+            if (signers.length > 0) {
+                signersHtml = `
+                    <div class="attachments-section">
+                        <div class="section-title">👥 Signers (${signers.length})</div>
+                        ${signers.map(signer => createSignerItem(signer)).join('')}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="account-number">
+                            Account: ${result.account_number}
+                            ${similarityScore}
+                        </div>
+                        <div class="customer-name">${customerName}</div>
+                    </div>
+                    <div class="result-content">
+                        <div class="info-grid">
+                            ${infoItems}
+                        </div>
+                        ${signersHtml}
+                        ${attachmentsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getDisplayValue(value) {
+            if (!value) return '';
+            if (Array.isArray(value)) {
+                return value.filter(v => v && typeof v !== 'object' && v.toString().trim()).join(', ');
+            }
+            if (typeof value === 'object') {
+                return JSON.stringify(value);
+            }
+            return value.toString().trim();
+        }
+
+        function formatLabel(key) {
+            return key
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase())
+                .trim();
+        }
+
+        function generateInfoItems(result) {
+            const content = result.content || {};
+            const accountInfo = content.account_info || {};
+            const loanDetails = content.loan_details || {};
+
+            // Priority fields to show first
+            const priorityFields = [
+                { key: 'pan', value: accountInfo.pan || loanDetails.PAN },
+                { key: 'aadhaar', value: accountInfo.aadhaar || loanDetails.Aadhaar },
+                { key: 'ssn', value: loanDetails.SSN },
+                { key: 'customer_id', value: accountInfo.customer_id || loanDetails.CustomerID },
+                { key: 'date_of_birth', value: accountInfo.dob || loanDetails.DOB },
+                { key: 'account_type', value: getDisplayValue(accountInfo.account_types) || loanDetails.AccountType },
+                { key: 'account_purpose', value: getDisplayValue(accountInfo.account_purposes) || loanDetails.AccountPurpose },
+                { key: 'ownership_type', value: getDisplayValue(accountInfo.ownership_types) || loanDetails.OwnershipType },
+                { key: 'date_opened', value: accountInfo.date_opened || loanDetails.DateOpened },
+                { key: 'date_revised', value: accountInfo.date_revised || loanDetails.DateRevised },
+                { key: 'opened_by', value: accountInfo.opened_by || loanDetails.OpenedBy },
+                { key: 'revised_by', value: accountInfo.revised_by || loanDetails.RevisedBy },
+                { key: 'mailing_address', value: loanDetails.MailingAddress },
+                { key: 'home_phone', value: loanDetails.HomePhone },
+                { key: 'work_phone', value: loanDetails.WorkPhone }
+            ];
+
+            // Additional fields from loan details
+            const additionalFields = [];
+            Object.entries(loanDetails).forEach(([key, value]) => {
+                if (!priorityFields.some(pf => pf.key.toLowerCase() === key.toLowerCase()) &&
+                    value &&
+                    typeof value === 'string' &&
+                    value.length < 200 &&
+                    !['Signers', 'Documents'].includes(key)) {
+                    additionalFields.push({ key, value });
+                }
+            });
+
+            // Combine and filter out empty values
+            const allFields = [...priorityFields, ...additionalFields]
+                .filter(field => field.value && getDisplayValue(field.value))
+                .slice(0, 12); // Limit to 12 items for better UI
+
+            return allFields.map(field => `
+                <div class="info-item">
+                    <div class="info-label">${formatLabel(field.key)}</div>
+                    <div class="info-value">${getDisplayValue(field.value)}</div>
+                </div>
+            `).join('');
+        }
+
+        function createAttachmentItem(attachment) {
+            const docType = attachment.documentType?.replace(/-/g, ' ') || 'Unknown Document';
+
+            // Get all relevant fields from attachment
+            const details = Object.entries(attachment)
+                .filter(([key, value]) =>
+                    key !== 'documentType' &&
+                    value &&
+                    typeof value !== 'object' &&
+                    typeof value !== 'undefined' &&
+                    (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') &&
+                    value.toString().length < 150
+                )
+                .map(([key, value]) =>
+                    `<strong>${formatLabel(key)}:</strong> ${getDisplayValue(value)}`
+                )
+                .join(' | ');
+
+            // Handle array fields separately
+            const arrayFields = Object.entries(attachment)
+                .filter(([key, value]) => Array.isArray(value) && value.length > 0)
+                .map(([key, value]) =>
+                    `<div><strong>${formatLabel(key)}:</strong> ${value.join(', ')}</div>`
+                )
+                .join('');
+
+            return `
+                <div class="attachment-item">
+                    <div class="attachment-type">${docType}</div>
+                    <div class="attachment-details">
+                        ${details}
+                        ${arrayFields}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createSignerItem(signer) {
+            const signerName = signer.SignerName || 'Unknown Signer';
+
+            const details = Object.entries(signer)
+                .filter(([key, value]) =>
+                    key !== 'SignerName' &&
+                    value &&
+                    typeof value === 'string' &&
+                    value.trim().length > 0 &&
+                    value.length < 150
+                )
+                .map(([key, value]) =>
+                    `<strong>${formatLabel(key)}:</strong> ${value}`
+                )
+                .join(' | ');
+
+            return `
+                <div class="attachment-item">
+                    <div class="attachment-type">👤 ${signerName}</div>
+                    <div class="attachment-details">${details}</div>
+                </div>
+            `;
+        }
+
+        // Handle search type change to show/hide examples
+        document.querySelectorAll('input[name="searchType"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const examplePrompts = document.getElementById('examplePrompts');
+                if (e.target.value === 'semantic') {
+                    examplePrompts.style.display = 'block';
+                } else {
+                    examplePrompts.style.display = 'none';
+                }
+            });
+        });
+
+        // Function to use example prompts
+        function usePrompt(prompt) {
+            searchQuery.value = prompt;
+            document.getElementById('semantic').checked = true;
+            document.getElementById('examplePrompts').style.display = 'block';
+            performSearch();
+        }
+
+        // Focus on search input when page loads
+        window.addEventListener('load', () => {
+            searchQuery.focus();
+        });
+    </script>
+</body>
+
+</html>

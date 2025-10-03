@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .account-count {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .accordion {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .accordion-header:hover {
+            background: #e9ecef;
+        }
+
+        .accordion-header.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .account-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .account-meta {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .accordion-header.active .account-meta {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .accordion-icon {
+            font-size: 1.2rem;
+            transition: transform 0.2s ease;
+        }
+
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .accordion-content.active {
+            display: block;
+        }
+
+        .json-section {
+            margin-bottom: 25px;
+        }
+
+        .json-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+
+        .json-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .json-content {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            background: #fff;
+        }
+
+        .attachment-item {
+            margin-bottom: 20px;
+        }
+
+        .attachment-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            padding: 6px 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .copy-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            float: right;
+            margin-top: -2px;
+        }
+
+        .copy-button:hover {
+            background: #218838;
+        }
+
+        .copy-button.copied {
+            background: #6c757d;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .accordion-header {
+                padding: 12px 15px;
+            }
+
+            .accordion-content {
+                padding: 15px;
+            }
+
+            .account-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Account Viewer</h1>
+            <div class="account-count" id="accountCount">Loading accounts...</div>
+        </div>
+
+        <div id="loadingSection" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading account data...</p>
+        </div>
+
+        <div id="accountsContainer"></div>
+    </div>
+
+    <script>
+        let allAccounts = [];
+
+        // Load accounts when page loads
+        window.addEventListener('load', loadAccounts);
+
+        async function loadAccounts() {
+            try {
+                const response = await fetch('/api/accounts');
+                const data = await response.json();
+
+                document.getElementById('loadingSection').style.display = 'none';
+
+                if (data.success) {
+                    allAccounts = data.accounts;
+                    displayAccounts(allAccounts);
+                    updateAccountCount(data.count);
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                document.getElementById('loadingSection').style.display = 'none';
+                showError('Failed to load accounts: ' + error.message);
+            }
+        }
+
+        function displayAccounts(accounts) {
+            const container = document.getElementById('accountsContainer');
+            
+            if (accounts.length === 0) {
+                container.innerHTML = `
+                    <div class="no-data">
+                        <h3>No accounts found</h3>
+                        <p>No account data is available in the database.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = accounts.map(account => createAccountAccordion(account)).join('');
+        }
+
+        function createAccountAccordion(account) {
+            const attachmentCount = account.attachments ? account.attachments.length : 0;
+            const lastModified = account.last_modified ? new Date(account.last_modified).toLocaleDateString() : 'N/A';
+
+            return `
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('${account.account_number}')">
+                        <div>
+                            <div class="account-title">Account: ${account.account_number}</div>
+                            <div class="account-meta">${attachmentCount} attachments • Last modified: ${lastModified}</div>
+                        </div>
+                        <div class="accordion-icon">▼</div>
+                    </div>
+                    <div class="accordion-content" id="content-${account.account_number}">
+                        ${createAccountContent(account)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createAccountContent(account) {
+            let content = '';
+
+            // Extracted JSON section
+            content += `
+                <div class="json-section">
+                    <div class="json-title">
+                        📄 Extracted JSON (General Information)
+                        <button class="copy-button" onclick="copyToClipboard('extracted-${account.account_number}', this)">Copy</button>
+                    </div>
+                    <div class="json-container">
+                        <div class="json-content" id="extracted-${account.account_number}">${formatJSON(account.extracted_json)}</div>
+                    </div>
+                </div>
+            `;
+
+            // Attachments section
+            if (account.attachments && account.attachments.length > 0) {
+                account.attachments.forEach((attachment, index) => {
+                    const attachmentNumber = index + 1;
+                    const attachmentId = `attachment-${account.account_number}-${attachmentNumber}`;
+                    
+                    content += `
+                        <div class="json-section">
+                            <div class="attachment-item">
+                                <div class="attachment-title">
+                                    📎 Attachment ${attachmentNumber}
+                                    <button class="copy-button" onclick="copyToClipboard('${attachmentId}', this)">Copy</button>
+                                </div>
+                                <div class="json-container">
+                                    <div class="json-content" id="${attachmentId}">${formatJSON(attachment)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                content += `
+                    <div class="json-section">
+                        <div class="attachment-title">📎 No Attachments</div>
+                        <p style="color: #666; font-style: italic; padding: 10px;">No attachment data available for this account.</p>
+                    </div>
+                `;
+            }
+
+            return content;
+        }
+
+        function formatJSON(obj) {
+            try {
+                return JSON.stringify(obj, null, 2);
+            } catch (error) {
+                return 'Error formatting JSON: ' + error.message;
+            }
+        }
+
+        function toggleAccordion(accountNumber) {
+            const header = document.querySelector(`[onclick="toggleAccordion('${accountNumber}')"]`);
+            const content = document.getElementById(`content-${accountNumber}`);
+            
+            // Close all other accordions
+            document.querySelectorAll('.accordion-header').forEach(h => {
+                if (h !== header) {
+                    h.classList.remove('active');
+                }
+            });
+            document.querySelectorAll('.accordion-content').forEach(c => {
+                if (c !== content) {
+                    c.classList.remove('active');
+                }
+            });
+
+            // Toggle current accordion
+            header.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        function copyToClipboard(elementId, button) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        function updateAccountCount(count) {
+            document.getElementById('accountCount').textContent = `${count} accounts loaded`;
+        }
+
+        function showError(message) {
+            document.getElementById('accountsContainer').innerHTML = `
+                <div class="error-message">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
